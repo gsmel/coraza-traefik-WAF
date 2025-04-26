@@ -1,0 +1,28 @@
+http:
+  middlewares:
+    coraza-waf:
+      forwardAuth:
+        address: "http://coraza:8080"
+        trustForwardHeader: true
+
+    secure-headers:
+      headers:
+        sslRedirect: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        customFrameOptionsValue: "SAMEORIGIN"
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        permissionsPolicy: "camera=(), microphone=(), geolocation=(), payment=()"
+        customResponseHeaders:
+          X-Robots-Tag: "none,noarchive,nosnippet,notranslate,noimageindex"
+          server: ""
+
+    waf-chain:
+      chain:
+        middlewares:
+          - secure-headers
+          - coraza-waf
