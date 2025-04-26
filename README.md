@@ -46,13 +46,10 @@ The WAF implementation includes:
 .
 ├── docker-compose.yml          # Main docker composition
 ├── Dockerfile                 # Coraza WAF container build
-├── coraza/
-│   └── rules/                # WAF rules directory (auto-managed)
 ├── scripts/
 │   └── update-crs.sh         # CRS update script
 └── traefik/
-    └── config/
-        └── middleware-chains.yml  # Middleware configuration
+    └── middleware-chains.yml  # Middleware configuration
 ```
 
 ### Rule Management
