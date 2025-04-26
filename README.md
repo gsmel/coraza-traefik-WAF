@@ -123,3 +123,8 @@ The `waf-chain` middleware includes both WAF protection and secure headers confi
 - Coraza: v3.0.0
 - Alpine: 3.19 (base image)
 - Based on official OWASP Coraza project
+
+## License
+
+This project is licensed under the MIT License. 
+
