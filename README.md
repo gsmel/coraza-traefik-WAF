@@ -35,12 +35,10 @@ The WAF implementation includes protection against:
 .
 ├── docker-compose.yml    # Main docker composition
 ├── Dockerfile           # Coraza WAF container build
-├── coraza/
-│   └── rules/
-│       └── main.conf    # WAF rules configuration
+└── rules/
+    └── main.conf    # WAF rules configuration
 └── traefik/
-    └── config/
-        └── middleware-chains.yml  # Middleware configuration
+    └── middleware-chains.yml  # Middleware configuration
 ```
 
 ### Environment Variables
