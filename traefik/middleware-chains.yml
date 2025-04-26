@@ -4,6 +4,11 @@ http:
       forwardAuth:
         address: "http://coraza:8080"
         trustForwardHeader: true
+        authResponseHeaders:
+          - X-Coraza-Status
+        # Pass all request headers to Coraza for inspection
+        authRequestHeaders:
+          - "*"
 
     secure-headers:
       headers:
