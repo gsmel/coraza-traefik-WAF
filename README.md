@@ -4,7 +4,7 @@ This project implements a Web Application Firewall (WAF) using OWASP Coraza as a
 
 ## Components
 
-- **Traefik (v2.10)**: Acts as the reverse proxy and entry point
+- **Traefik (v3.3.5)**: Acts as the reverse proxy and entry point
 - **Coraza WAF (v3.0.0)**: Provides WAF capabilities with ModSecurity-compatible rules
 - **OWASP Core Rule Set (CRS)**: Provides base security rules that are automatically managed
 
@@ -119,7 +119,7 @@ The `waf-chain` middleware includes both WAF protection and secure headers confi
 
 ## Version Information
 
-- Traefik: v2.10
+- Traefik: v3.3.5
 - Coraza: v3.0.0
 - Alpine: 3.19 (base image)
 - Based on official OWASP Coraza project
