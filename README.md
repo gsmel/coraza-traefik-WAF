@@ -1,21 +1,22 @@
-# Coraza WAF with Traefik Setup
+# Coraza WAF Middleware for Traefik
 
-This project implements a Web Application Firewall (WAF) using OWASP Coraza, integrated with Traefik reverse proxy. The setup provides enterprise-grade security features while maintaining high performance.
+This project implements a Web Application Firewall (WAF) using OWASP Coraza as a Forward Auth middleware for Traefik. This setup allows you to add WAF protection to any service in your Traefik configuration.
 
 ## Components
 
-- **Coraza WAF**: Provides WAF capabilities with ModSecurity-compatible rules
+- **Traefik (v2.10)**: Acts as the reverse proxy and entry point
+- **Coraza WAF**: Provides WAF capabilities as a Forward Auth middleware with ModSecurity-compatible rules
 
 ## Architecture
 
 ```
-Client Request → Traefik → Coraza WAF → API Instance
+Client Request → Traefik → Coraza WAF (Forward Auth) → Target Service
 ```
 
-The setup uses Docker Compose to orchestrate three main services:
+The setup uses Docker Compose to orchestrate two main services:
 
 1. **Traefik**: Handles incoming traffic on ports 80 and 443
-2. **Coraza WAF**: Processes requests through port 8080
+2. **Coraza WAF**: Acts as a Forward Auth service on port 8080
 
 ## Security Features
 
@@ -39,17 +40,18 @@ The WAF implementation includes protection against:
 │       └── main.conf    # WAF rules configuration
 └── traefik/
     └── config/
-        └── middleware-chains.yml
+        └── middleware-chains.yml  # Middleware configuration
 ```
 
 ### Environment Variables
 
 Coraza WAF configuration:
 - `CORAZA_PROXY_LISTEN`: WAF listening port (default: :8080)
-- `CORAZA_PROXY_UPSTREAM`: Protected service URL
 - `CORAZA_RULES_FILE`: Path to rules configuration
 
-## Getting Started
+## Usage
+
+### Getting Started
 
 1. Clone this repository
 2. Ensure Docker and Docker Compose are installed
@@ -58,13 +60,38 @@ Coraza WAF configuration:
    docker compose up -d
    ```
 
+### Protecting Your Services
+
+To protect any service with the WAF, add the middleware to your service's Traefik labels:
+
+```yaml
+services:
+  your-service:
+    # ... your service configuration ...
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.your-service.rule=Host(`your-domain.com`)"
+      - "traefik.http.routers.your-service.middlewares=waf-chain@file"
+```
+
 ## Monitoring
 
 - Traefik dashboard is enabled for monitoring
-- WAF audit logs are stored in `/var/log/coraza/audit.log`
+- WAF audit logs are printed to stdout and can be viewed using:
+  ```bash
+  docker logs coraza-waf
+  ```
+- Audit logs include details of blocked requests and security rule violations
 
 ## Security Considerations
 
 - The WAF is configured with a default deny policy
 - Custom rules can be added to `coraza/rules/main.conf`
 - Traefik is configured with security options including `no-new-privileges`
+- All request headers are inspected for potential threats
+
+## Version Information
+
+- Traefik: v2.10
+- Coraza: v3.0.0
+- Based on official OWASP Coraza project (github.com/corazawaf/coraza)
