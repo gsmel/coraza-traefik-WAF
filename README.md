@@ -1,6 +1,6 @@
 # Coraza WAF Middleware for Traefik
 
-This project implements a Web Application Firewall (WAF) using OWASP Coraza as a Forward Auth middleware for Traefik. It provides real-time protection for web applications with automatic rule reloading capabilities.
+This project implements a Web Application Firewall (WAF) using [OWASP Coraza](https://coraza.io) as a Forward Auth middleware for Traefik. It provides real-time protection for web applications with automatic rule reloading capabilities.
 
 ## Components
 
@@ -25,8 +25,8 @@ The setup uses Docker Compose to orchestrate two main services:
 ## Security Features
 
 The WAF implementation includes:
-- Integration with latest OWASP Core Rule Set
-- Automatic rule updates via git
+- Integration with latest [OWASP Core Rule Set](https://github.com/coreruleset/coreruleset/tree/main)
+- Automatic rule updates
 - Real-time rule reloading without service restart
 - Protection against:
   - SQL Injection
