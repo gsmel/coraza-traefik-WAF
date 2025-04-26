@@ -1,24 +1,21 @@
 # Coraza WAF with Traefik Setup
 
-This project implements a Web Application Firewall (WAF) using OWASP Coraza, integrated with Traefik reverse proxy to protect an Ollama API instance. The setup provides enterprise-grade security features while maintaining high performance.
+This project implements a Web Application Firewall (WAF) using OWASP Coraza, integrated with Traefik reverse proxy. The setup provides enterprise-grade security features while maintaining high performance.
 
 ## Components
 
-- **Traefik (v2.10)**: Acts as the reverse proxy and entry point
 - **Coraza WAF**: Provides WAF capabilities with ModSecurity-compatible rules
-- **Ollama**: Protected API service
 
 ## Architecture
 
 ```
-Client Request → Traefik → Coraza WAF → Ollama API
+Client Request → Traefik → Coraza WAF → API Instance
 ```
 
 The setup uses Docker Compose to orchestrate three main services:
 
 1. **Traefik**: Handles incoming traffic on ports 80 and 443
 2. **Coraza WAF**: Processes requests through port 8080
-3. **Ollama**: Runs on internal port 11434
 
 ## Security Features
 
@@ -71,9 +68,3 @@ Coraza WAF configuration:
 - The WAF is configured with a default deny policy
 - Custom rules can be added to `coraza/rules/main.conf`
 - Traefik is configured with security options including `no-new-privileges`
-
-## Version Information
-
-- Traefik: v2.10
-- Coraza: Latest stable version
-- Based on official OWASP Coraza project (github.com/corazawaf/coraza)
