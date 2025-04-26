@@ -26,7 +26,7 @@ The setup uses Docker Compose to orchestrate two main services:
 
 The WAF implementation includes:
 - Integration with latest [OWASP Core Rule Set](https://github.com/coreruleset/coreruleset/tree/main)
-- Automatic rule updates
+- Automatic rule updates from [OWASP CRS](https://github.com/coreruleset/coreruleset/tree/main/rules)
 - Real-time rule reloading without service restart
 - Protection against:
   - SQL Injection
