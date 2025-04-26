@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/config:/etc/traefik
+      - ./traefik/certificates:/certificates
+    networks:
+      - proxy
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.directory=/etc/traefik"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--log.level=INFO"
+
+  coraza:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: coraza-waf
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - crs_rules:/etc/coraza/rules
+    environment:
+      - CORAZA_PROXY_LISTEN=:8080
+
+networks:
+  proxy:
+    name: proxy
+    external: false
+
+volumes:
+  crs_rules:
+    name: coraza_crs_rules
