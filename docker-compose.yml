@@ -1,32 +1,4 @@
-version: '3.8'
-
 services:
-  traefik:
-    image: traefik:v2.10
-    container_name: traefik
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik/config:/etc/traefik
-      - ./traefik/certificates:/certificates
-    networks:
-      - proxy
-    command:
-      - "--api.dashboard=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--providers.file.directory=/etc/traefik"
-      - "--providers.file.watch=true"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--log.level=INFO"
-
   coraza:
     build:
       context: .
@@ -41,15 +13,6 @@ services:
       - CORAZA_PROXY_LISTEN=:8080
       - CORAZA_PROXY_UPSTREAM=http://ollama:11434
       - CORAZA_RULES_FILE=/etc/coraza/rules/main.conf
-
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    restart: unless-stopped
-    volumes:
-      - ./ollama:/root/.ollama
-    networks:
-      - proxy
 
 networks:
   proxy:
