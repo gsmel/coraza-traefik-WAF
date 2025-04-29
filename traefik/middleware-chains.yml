@@ -2,11 +2,10 @@ http:
   middlewares:
     coraza-waf:
       forwardAuth:
-        address: "http://coraza:8080"
+        address: "http://coraza:9080"
         trustForwardHeader: true
         authResponseHeaders:
           - X-Coraza-Status
-        # Pass all request headers to Coraza for inspection
         authRequestHeaders:
           - "*"
 

@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
 
   coraza:
@@ -11,7 +13,7 @@ services:
     volumes:
       - crs_rules:/etc/coraza/rules
     environment:
-      - CORAZA_PROXY_LISTEN=:8080
+      - CORAZA_PROXY_LISTEN=:9080
 
 networks:
   proxy:
