@@ -5,7 +5,12 @@ http:
         address: "http://coraza:9080"
         trustForwardHeader: true
         authResponseHeaders:
-          - X-Coraza-Status
+          - "X-Coraza-Status"
+          - "Content-Type"
+          - "Content-Length"
+          - "Location"
+          - "Set-Cookie"
+        # Pass all request headers to Coraza for inspection
         authRequestHeaders:
           - "*"
 
@@ -28,5 +33,5 @@ http:
     waf-chain:
       chain:
         middlewares:
-          - secure-headers
           - coraza-waf
+          - secure-headers

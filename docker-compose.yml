@@ -11,7 +11,7 @@ services:
     networks:
       - proxy
     volumes:
-      - crs_rules:/etc/coraza/rules
+      - ./coraza/rules:/etc/coraza/rules
     environment:
       - CORAZA_PROXY_LISTEN=:9080
 

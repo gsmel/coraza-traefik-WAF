@@ -1,57 +1,49 @@
 # Build stage
 FROM golang:1.22-alpine AS builder
 
+# Install build dependencies
+RUN apk add --no-cache build-base git pcre2-dev pkgconfig
+
+# Set working directory
 WORKDIR /app
 
-# Install required build dependencies with correct package names
-RUN apk add --no-cache \
-    git \
-    make \
-    gcc \
-    musl-dev \
-    pkgconfig \
-    build-base \
-    pcre2-dev \
-    pcre2
+# Copy the source code
+COPY . .
 
-# Copy Go files
-COPY go.mod main.go ./
-
-# Initialize modules and download dependencies
-RUN go mod init coraza-forward-auth || true && \
+# Force module initialization with specific versions and download dependencies
+RUN go mod edit -go=1.22 && \
     go get github.com/corazawaf/coraza/v3@v3.1.0 && \
+    go get github.com/corazawaf/coraza/v3/types@v3.1.0 && \
     go get github.com/fsnotify/fsnotify@v1.7.0 && \
-    go get github.com/prometheus/client_golang@v1.19.0 && \
+    go get github.com/prometheus/client_golang/prometheus@v1.19.0 && \
+    go get github.com/prometheus/client_golang/prometheus/promhttp@v1.19.0 && \
     go mod tidy
 
-# Build with verbose output and specific PCRE2 configuration
-RUN PKG_CONFIG_PATH=/usr/lib/pkgconfig \
-    CGO_ENABLED=1 \
-    CGO_CFLAGS="`pkg-config --cflags libpcre2-8`" \
-    CGO_LDFLAGS="`pkg-config --libs libpcre2-8`" \
-    GOEXPERIMENT=cgocheck2 \
-    go build -v -o coraza-waf
+# Build the WAF
+RUN CGO_ENABLED=1 go build -v -ldflags="-s -w" -o coraza-waf
 
-# Final stage
-FROM alpine:3.19
+# Create final image
+FROM alpine:3.18
 
 # Install runtime dependencies
-RUN apk add --no-cache \
-    git \
-    pcre2 \
-    ca-certificates
+RUN apk add --no-cache ca-certificates pcre2 pcre2-dev
 
-# Copy binary and set up directories
-COPY --from=builder /app/coraza-waf /app/coraza-waf
-COPY scripts/update-crs.sh /app/update-crs.sh
-RUN mkdir -p /etc/coraza/rules && \
-    chmod +x /app/update-crs.sh
+# Set up rules directory (don't attempt to copy files that may not exist)
+RUN mkdir -p /etc/coraza/rules
 
-WORKDIR /app
+# Copy binary from builder
+COPY --from=builder /app/coraza-waf /usr/local/bin/coraza-waf
 
-EXPOSE 9080
+# Add a basic example rule (fixed quoting syntax)
+RUN echo "SecRule REQUEST_URI \"@contains /admin\" \"id:1000,phase:1,deny,status:403,msg:'Admin access blocked'\"" > /etc/coraza/rules/basic-rules.conf
 
-ENV CORAZA_PROXY_LISTEN=":9080"
+# Define environment variables with defaults
+ENV CORAZA_PROXY_LISTEN=:9080
+ENV CORAZA_RULES_DIR=/etc/coraza/rules
+ENV CORAZA_METRICS_LISTEN=:9090
 
-# Initialize CRS rules and start WAF
-CMD ["/bin/sh", "-c", "/app/update-crs.sh && /app/coraza-waf"]
+# Expose the service port
+EXPOSE 9080 9090
+
+# Run the WAF
+ENTRYPOINT ["/usr/local/bin/coraza-waf"]

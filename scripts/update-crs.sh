@@ -1,57 +1,68 @@
 #!/bin/sh
 set -e
 
-CRS_REPO="https://github.com/coreruleset/coreruleset.git"
-RULES_DIR="/etc/coraza/rules"
-CRS_TMP_DIR="/tmp/crs-rules"
+# Directory for rules in the host
+RULES_DIR="./coraza/rules"
+TEMP_DIR="./temp_crs"
+CRS_VERSION="3.3.5"
 
-echo "Starting CRS update process..."
+echo "Updating Core Rule Set to version $CRS_VERSION..."
 
-# Ensure directories exist
-mkdir -p "${RULES_DIR}"
-mkdir -p "${CRS_TMP_DIR}"
+# Create temp directory
+mkdir -p $TEMP_DIR
 
-# Clone or update CRS repository
-if [ -d "${CRS_TMP_DIR}/.git" ]; then
-    echo "Updating existing CRS repository..."
-    cd "${CRS_TMP_DIR}"
-    git pull origin main
-else
-    echo "Cloning CRS repository..."
-    git clone --depth 1 "${CRS_REPO}" "${CRS_TMP_DIR}"
+# Download latest CRS
+curl -s -L "https://github.com/coreruleset/coreruleset/archive/refs/tags/v$CRS_VERSION.tar.gz" -o $TEMP_DIR/crs.tar.gz
+
+# Extract only the rules
+mkdir -p $TEMP_DIR/extracted
+tar -xzf $TEMP_DIR/crs.tar.gz -C $TEMP_DIR/extracted --strip-components=1
+
+# Create backup of current rules if they exist
+if [ -d "$RULES_DIR" ] && [ "$(ls -A $RULES_DIR 2>/dev/null)" ]; then
+    BACKUP_DIR="./coraza/rules_backup_$(date +%Y%m%d_%H%M%S)"
+    echo "Creating backup of current rules to $BACKUP_DIR"
+    mkdir -p $BACKUP_DIR
+    cp -r $RULES_DIR/* $BACKUP_DIR/
 fi
 
-# Sync rules directory
-echo "Syncing rules..."
-cd "${CRS_TMP_DIR}"
+# Process and copy rules
+echo "Processing and copying rules to $RULES_DIR"
+mkdir -p $RULES_DIR
 
-# First clean up the rules directory
-rm -f "${RULES_DIR}"/*.conf "${RULES_DIR}"/*.data
+# Copy the CRS setup file first
+if [ -f "$TEMP_DIR/extracted/crs-setup.conf.example" ]; then
+    echo "Copying and configuring crs-setup.conf..."
+    cp "$TEMP_DIR/extracted/crs-setup.conf.example" "$RULES_DIR/crs-setup.conf"
+fi
 
-# Copy rules from the correct path
-echo "Copying rules from ${CRS_TMP_DIR}/rules..."
-cp -fv rules/*.conf "${RULES_DIR}/" 2>/dev/null || true
-cp -fv rules/*.data "${RULES_DIR}/" 2>/dev/null || true
-
-# Handle example files
-for f in rules/*.example; do
-    if [ -f "$f" ]; then
-        basename=$(basename "$f" .example)
-        if [ ! -f "${RULES_DIR}/${basename}" ]; then
-            cp -v "$f" "${RULES_DIR}/${basename}"
-        fi
+# Process and copy rules from the extracted archive - only taking the core rules
+for file in $TEMP_DIR/extracted/rules/*.conf; do
+    base_filename=$(basename "$file")
+    
+    # Skip exclusion rules and problematic rules
+    if [[ "$base_filename" == *"EXCLUSION"* ]] || [[ "$base_filename" == "REQUEST-910-IP-REPUTATION.conf" ]]; then
+        echo "Skipping problematic rule file: $base_filename"
+        continue
     fi
+    
+    echo "Copying rule file: $base_filename"
+    cp "$file" "$RULES_DIR/$base_filename"
 done
 
-# Copy CRS setup configuration
-cp "${CRS_TMP_DIR}/crs-setup.conf.example" "${RULES_DIR}/crs-setup.conf"
+# Add a basic rule to ensure there's something functional
+echo "Creating basic fallback rules..."
+cat > "$RULES_DIR/basic-rules.conf" << EOF
+# Basic WAF rules that will work with Coraza
+SecRule REQUEST_URI "@contains /admin" "id:1000,phase:1,deny,status:403,msg:'Admin access blocked'"
+SecRule ARGS "@contains SELECT FROM" "id:1001,phase:2,deny,status:403,msg:'SQL Injection attempt detected'" 
+SecRule ARGS "@contains <script>" "id:1002,phase:2,deny,status:403,msg:'XSS attempt detected'"
+SecRule REQUEST_URI "@contains ../etc/passwd" "id:1003,phase:1,deny,status:403,msg:'Path traversal attempt'"
+SecRule REQUEST_URI "@contains cmd=" "id:1004,phase:1,deny,status:403,msg:'Command injection attempt'"
+EOF
 
-# Create empty exclusion files (required by CRS)
-touch "${RULES_DIR}/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf"
-touch "${RULES_DIR}/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf"
+# Clean up
+rm -rf $TEMP_DIR
 
-# List copied files for verification
-echo "Files in rules directory:"
-ls -la "${RULES_DIR}"
-
-echo "CRS rules updated successfully"
+echo "Done! Core Rule Set updated to version $CRS_VERSION"
+echo "Restart your container with 'docker-compose restart coraza' to apply the changes"
