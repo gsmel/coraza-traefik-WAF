@@ -1,0 +1,20 @@
+services:
+  coraza:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: coraza-waf
+    restart: unless-stopped
+    networks:
+      - proxy
+    environment:
+      - CORAZA_PROXY_LISTEN=:9080
+      - CORAZA_METRICS_LISTEN=:9090
+      - CORAZA_RULES_DIR=/etc/coraza/rules
+    ports:
+      - 9080:9080
+      - 9090:9090
+
+networks:
+  proxy:
+    external: true

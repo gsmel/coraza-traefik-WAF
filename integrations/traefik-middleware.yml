@@ -1,0 +1,58 @@
+# Traefik Middleware Configuration for Coraza WAF
+# Place this in your Traefik dynamic configuration
+
+http:
+  middlewares:
+    coraza-waf:
+      forwardAuth:
+        address: "http://coraza-waf:9080"
+        authRequestHeaders:
+          - "X-Forwarded-Method"
+          - "X-Forwarded-Proto"
+          - "X-Forwarded-Host"
+          - "X-Forwarded-Uri"
+          - "X-Forwarded-For"
+          - "Content-Length"
+          - "Content-Type"
+
+  routers:
+    # Example: Protect your application with Coraza WAF
+    my-app:
+      rule: "Host(`myapp.example.com`)"
+      service: my-app-service
+      middlewares:
+        - coraza-waf  # Apply WAF protection
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    my-app-service:
+      loadBalancer:
+        servers:
+          - url: "http://my-app:8080"
+
+    # Coraza WAF service
+    coraza-waf-service:
+      loadBalancer:
+        servers:
+          - url: "http://coraza-waf:9080"
+
+# Docker Compose snippet for your stack
+# version: '3.8'
+# services:
+#   coraza-waf:
+#     image: your-registry/coraza-waf:latest
+#     ports:
+#       - "9080:9080"
+#       - "9090:9090"
+#     networks:
+#       - traefik
+#
+#   my-app:
+#     image: my-app:latest
+#     networks:
+#       - traefik
+#
+# networks:
+#   traefik:
+#     external: true
